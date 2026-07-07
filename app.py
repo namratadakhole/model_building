@@ -7,54 +7,67 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 
-# Ensure NLTK data is available
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
+# ---------------------- Download NLTK Resources ----------------------
 
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+resources = {
+    "corpora/stopwords": "stopwords",
+    "tokenizers/punkt": "punkt",
+    "tokenizers/punkt_tab": "punkt_tab",
+    "corpora/wordnet": "wordnet",
+    "corpora/omw-1.4": "omw-1.4"
+}
 
-try:
-    nltk.data.find('corpora/wordnet')
-except LookupError:
-    nltk.download('wordnet')
+for path, resource in resources.items():
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        nltk.download(resource)
 
-# Load the trained model and TF-IDF vectorizer
-model = joblib.load('model.pkl')
-vectorizer = joblib.load('vector.pkl')
+# ---------------------- Load Model ----------------------
 
-stop_words = set(stopwords.words('english'))
+model = joblib.load("model.pkl")
+vectorizer = joblib.load("vector.pkl")
+
+stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
 stemmer = PorterStemmer()
 
 
+# ---------------------- Text Cleaning ----------------------
+
 def clean_text(text):
     # Remove HTML tags
-    text = re.sub(r'<.*?>', '', text)
+    text = re.sub(r"<.*?>", "", text)
 
     # Remove punctuation and special characters
-    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    text = re.sub(r"[^a-zA-Z\s]", "", text)
 
     # Convert to lowercase
     text = text.lower()
 
-    # Remove stop words
-    text = ' '.join([word for word in text.split() if word not in stop_words])
+    # Remove stopwords
+    text = " ".join(
+        [word for word in text.split() if word not in stop_words]
+    )
 
     return text
 
 
+# ---------------------- Preprocessing ----------------------
+
 def preprocess_text_for_model(text):
     cleaned_text = clean_text(text)
+
+    # Tokenize
     tokens = word_tokenize(cleaned_text)
+
+    # Lemmatize
     lemmas = [lemmatizer.lemmatize(token) for token in tokens]
+
+    # Stem
     stemmed_tokens = [stemmer.stem(token) for token in lemmas]
-    stemmed_text = ' '.join(stemmed_tokens)
-    return stemmed_text
+
+    return " ".join(stemmed_tokens)
 
 
 # ---------------------- Streamlit UI ----------------------
@@ -80,6 +93,7 @@ if st.button("Predict Sentiment"):
 
     if input_text.strip() == "":
         st.warning("Please enter a movie review.")
+
     else:
         # Preprocess
         processed_text = preprocess_text_for_model(input_text)
